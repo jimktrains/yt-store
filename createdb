@@ -1,0 +1,27 @@
+#!/bin/sh
+
+#. ./configfile
+
+#cd $STORAGE_PATH
+
+cat <<EOS | sqlite3 videos.sqlite3
+create table video (
+  video_id varchar(255) not null primary key,
+  uploader_id varchar(255) not null references uploader(uploader_id),
+  title varchar(255),
+  description text,
+  duration integer,
+  upload_date varchar(8)
+);
+
+create table video_tag (
+  tag_id integer primary key autoincrement,
+  video_id varchar(255) not null references videos(id),
+  tag varchar(255) not null
+);
+
+create table uploader (
+  uploader_id varchar(255) primary key,
+  name varchar(255) not null
+);
+EOS

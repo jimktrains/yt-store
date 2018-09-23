@@ -1,0 +1,43 @@
+#!/bin/bash
+
+. ./configfile
+
+#pip3 install --upgrade youtube-dl
+cd $STORAGE_PATH
+
+URL="$1"
+ID=`echo $URL | sed 's/.*v=\(.*\)/\1/'`
+
+if [ ! -e $ID.mp4 ]; then
+  youtube-dl --write-description --write-info-json --write-annotations --write-all-thumbnails --prefer-free-formats --all-subs --id "${1}"
+fi
+
+INFO=$ID.info.json
+
+TITLE=`jq .title $INFO`
+DESCRIPTION=`jq .description $INFO`
+DURATION=`jq .duration $INFO`
+UPLOAD_DATE=`jq .upload_date $INFO`
+UPLOADER_ID=`jq .uploader_id $INFO`
+UPLOADER=`jq .uploader $INFO`
+
+cat <<EOS | sqlite3 videos.sqlite3
+INSERT INTO uploader (uploader_id, name) VALUES ($UPLOADER_ID, $UPLOADER)
+EOS
+
+cat <<EOS | sqlite3 videos.sqlite3
+INSERT INTO video
+(video_id, title, description, duration, uploader_id, upload_date) 
+VALUES 
+('$ID', $TITLE, $DESCRIPTION, $DURATION, $UPLOADER_ID, $UPLOAD_DATE)
+EOS
+
+# I don't feel like fighting with regexs right now.
+# [\[\]] wasn't working
+jq .tags $INFO | sed 's/\[//g' | sed 's/\]//g' | sed 's/^\s\+//g' | sed 's/",//g' | sed 's/"//g' | while read i; do
+  if [ ! -z "$i" ]; then
+    cat <<EOS | sqlite3 videos.sqlite3
+    INSERT INTO video_tag (video_id, tag) VALUES ('$ID', "$i")
+EOS
+  fi
+done
