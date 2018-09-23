@@ -4,7 +4,7 @@ Stores youtube videos with metadata in a sqlite database.
 
 1) Set where you'd like to store videos (change `~/Videos` with your location)
 ```
-echo STORAGE_PATH=~/Videos
+echo STORAGE_PATH=~/Videos > configfile
 ```
 
 2) Create the database
